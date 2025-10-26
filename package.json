@@ -1,0 +1,9 @@
+{
+  "name": "cleanbnb-full",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start:backend": "node backend/src/server.js",
+    "start:frontend": "cd frontend && npm run dev"
+  }
+}
