@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: CleanBnB - API
+  version: 0.2.0
+servers:
+  - url: https://api.cleanbnb.example.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+      required: [email, password]
+    TokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+    Booking:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        propertyId: { type: string }
+        checkin: { type: string, format: date-time }
+        checkout: { type: string, format: date-time }
+        source: { type: string }
+      required: [propertyId, checkin, checkout]
+    Task:
+      type: object
+      properties:
+        id: { type: string }
+        bookingId: { type: string }
+        propertyId: { type: string }
+        scheduledStart: { type: string, format: date-time }
+        scheduledEnd: { type: string, format: date-time }
+        status: { type: string }
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /bookings:
+    get:
+      summary: Liste des bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: propertyId
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: array of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+    post:
+      summary: Créer booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Booking'
+      responses:
+        '201':
+          description: created
+  /tasks/generate-from-booking:
+    post:
+      summary: Génère une tâche de nettoyage pour une booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookingId:
+                  type: string
+      responses:
+        '201':
+          description: task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+  /tasks/{id}/assign:
+    post:
+      summary: Assigner une tâche à un cleaner
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cleanerId: { type: string }
+      responses:
+        '200':
+          description: assigned
